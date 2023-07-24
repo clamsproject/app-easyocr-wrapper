@@ -1,0 +1,49 @@
+{
+  "metadata": {
+    "mmif": "http://mmif.clams.ai/1.0.0"
+  },
+  "documents": [
+    {
+      "@type": "http://mmif.clams.ai/vocabulary/VideoDocument/v1",
+      "properties": {
+        "mime": "video",
+        "id": "d1",
+        "location": "file:///Users/sam/Documents/clams_docs/test_vid.mp4"
+      }
+    }
+  ],
+  "views": [
+    {
+      "id": "v_0",
+      "metadata": {
+        "timestamp": "2023-07-07T14:08:10.384057",
+        "app": "http://apps.clams.ai/clipsearch/f2bdf18",
+        "contains": {
+          "http://mmif.clams.ai/vocabulary/TimeFrame/v1": {
+            "timeUnit": "milliseconds",
+            "document": "d1"
+          }
+        },
+        "parameters": {
+          "timeUnit": "milliseconds",
+          "sampleRatio": "10",
+          "threshold": "0.275",
+          "query": "['afghanistan@afghanistan', 'donald rumsfeld@rumsfeld']",
+          "pretty": "True"
+        }
+      },
+      "annotations": [
+        {
+          "@type": "http://mmif.clams.ai/vocabulary/TimeFrame/v1",
+          "properties": {
+            "start": 101628,
+            "end": 101630,
+            "unit": "frames",
+            "label": "credits",
+            "id": "tf_1"
+          }
+        }
+      ]
+    }
+  ]
+}
