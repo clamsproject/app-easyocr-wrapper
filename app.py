@@ -6,18 +6,16 @@ from clams import ClamsApp, Restifier
 from mmif import Mmif, View, Annotation, Document, AnnotationTypes, DocumentTypes
 from mmif.utils import video_document_helper as vdh
 
+import easyocr
 import torch
-from transformers import Pix2StructForConditionalGeneration as psg
-from transformers import Pix2StructProcessor as psp
 
 
 class EasyOcrWrapper(ClamsApp):
 
     def __init__(self):
         super().__init__()
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.model = psg.from_pretrained("google/pix2struct-docvqa-base").to(self.device)
-        self.processor = psp.from_pretrained("google/pix2struct-docvqa-base")
+        gpu = True if torch.cuda.is_available() else False
+        self.reader = easyocr.Reader(['en'], gpu=gpu)
 
     def _appmetadata(self):
         # see https://sdk.clams.ai/autodoc/clams.app.html#clams.app.ClamsApp._load_appmetadata
@@ -25,28 +23,9 @@ class EasyOcrWrapper(ClamsApp):
         # When using the ``metadata.py`` leave this do-nothing "pass" method here.
         pass
 
-    @staticmethod
-    def vote(candidates: List[Iterable[Tuple[str, str]]]) -> Tuple[str, str]:
-        """
-        For each question, vote on the most common answer
-        :param candidates: completion candidates
-        :return: query and the most common answer
-        """
-        answers = []
-        query: str = ""
-        for candidate in candidates:
-            for query, answer in candidate:
-                query = query
-                answers.append(answer)
-        return query, max(set(answers), key=answers.count)
-
-    def generate(self, img, questions):
-        inputs = self.processor(images=[img for _ in range(len(questions))],
-                                text=questions, return_tensors="pt").to(self.device)
-        predictions = self.model.generate(**inputs, max_new_tokens=256)
-        return zip(questions, self.processor.batch_decode(predictions, skip_special_tokens=True))
 
     def _annotate(self, mmif: Union[str, dict, Mmif], **parameters) -> Mmif:
+        self.logger.debug("running app")
         video_doc: Document = mmif.get_documents_by_type(DocumentTypes.VideoDocument)[0]
         input_view: View = mmif.get_views_for_document(video_doc.properties.id)[0]
 
@@ -58,23 +37,12 @@ class EasyOcrWrapper(ClamsApp):
             document=video_doc.id,
         )
 
-        input_queries = parameters.get("query")
-        input_queries = [query.replace('+', ' ') for query in input_queries]
-
-        query_to_label = {}
-        queries = []
-
-        for item in input_queries:
-            query, label = item.split('@')
-            query_to_label[query] = label
-            queries.append(query)
-
-        for timeframe in input_view.get_annotations(AnnotationTypes.TimeFrame, label=config["frameType"]):
+        for timeframe in input_view.get_annotations(AnnotationTypes.TimeFrame):
             print(timeframe.properties)
             # get images from time frame
             if config["sampleFrames"] == 1:
-                image = vdh.extract_mid_frame(mmif, timeframe, as_PIL=True)
-                completions = self.generate(image, queries)
+                image = vdh.extract_mid_frame(mmif, timeframe, as_PIL=False)
+                ocr = self.reader.readtext(image)
             else:
                 timeframe_length = int(timeframe.properties["end"] - timeframe.properties["start"])
                 sample_frames = config["sampleFrames"]
@@ -85,22 +53,24 @@ class EasyOcrWrapper(ClamsApp):
                 tf_sample = vdh.sample_frames(timeframe.properties["start"], timeframe.properties["end"],
                                               sample_ratio)
                 images = vdh.extract_frames_as_images(video_doc, tf_sample)
-                completions = []
-                for query in queries:
-                    candidates = []
-                    for image in images:
-                        candidates.append(self.generate(image, query))
-                    completions.append(self.vote(candidates))
+                # Not implemented yet
+                raise NotImplementedError
 
-            for query, answer in completions:
-                print(f"query: {query} answer: {answer}")
-            # add question answer pairs as properties to timeframe
-                text_document = new_view.new_textdocument(answer)
-                text_document.add_property("query", query)
-                text_document.add_property("label", query_to_label[query])
-                align_annotation = new_view.new_annotation(AnnotationTypes.Alignment)
-                align_annotation.add_property("source", timeframe.id)
-                align_annotation.add_property("target", text_document.id)
+            text = ""
+            scores = []
+            for coord, text, score in ocr:
+                if score > 0.5:
+                    text += text + " "
+                    scores.append(score)
+            score = sum(scores) / len(scores)
+            self.logger.debug("OCR: " + text)
+
+            # add OCR output to text document
+            text_document = new_view.new_textdocument(text)
+            text_document.add_property("confidence", score)
+            align_annotation = new_view.new_annotation(AnnotationTypes.Alignment)
+            align_annotation.add_property("source", timeframe.id)
+            align_annotation.add_property("target", text_document.id)
             pass
 
         return mmif
