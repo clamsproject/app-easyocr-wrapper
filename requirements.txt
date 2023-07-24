@@ -2,5 +2,5 @@
 clams-python==1.0.9
 mmif-python[cv]==1.0.8
 
+easyocr==1.7.0
 torch~=2.0.1
-transformers~=4.31.0
