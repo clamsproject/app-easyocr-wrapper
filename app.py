@@ -11,7 +11,7 @@ from transformers import Pix2StructForConditionalGeneration as psg
 from transformers import Pix2StructProcessor as psp
 
 
-class Pix2structDocvqaWrapper(ClamsApp):
+class EasyOcrWrapper(ClamsApp):
 
     def __init__(self):
         super().__init__()
@@ -118,7 +118,7 @@ if __name__ == "__main__":
     parsed_args = parser.parse_args()
 
     # create the app instance
-    app = Pix2structDocvqaWrapper()
+    app = EasyOcrWrapper()
 
     http_app = Restifier(app, port=int(parsed_args.port))
 
