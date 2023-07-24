@@ -39,7 +39,7 @@ def appmetadata() -> AppMetadata:
     
     # (optional) and finally add runtime parameter specifications
     metadata.add_parameter(name='sampleFrames', description='Number of frames to sample from timeframe',
-                           type='boolean', default='false')
+                           type='integer', default='1')
 
     return metadata
 
