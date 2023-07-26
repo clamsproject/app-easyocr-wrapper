@@ -4,3 +4,5 @@ mmif-python[cv]==1.0.8
 
 easyocr==1.7.0
 torch~=2.0.1
+Pillow==9.5.0
+numpy~=1.24.4
