@@ -1,4 +1,5 @@
 import argparse
+import logging
 from typing import Union, List, Dict, Tuple, Iterable
 
 # mostly likely you'll need these modules/classes
@@ -8,6 +9,7 @@ from mmif.utils import video_document_helper as vdh
 
 import easyocr
 import torch
+import numpy as np
 
 
 class EasyOcrWrapper(ClamsApp):
@@ -23,7 +25,6 @@ class EasyOcrWrapper(ClamsApp):
         # When using the ``metadata.py`` leave this do-nothing "pass" method here.
         pass
 
-
     def _annotate(self, mmif: Union[str, dict, Mmif], **parameters) -> Mmif:
         self.logger.debug("running app")
         video_doc: Document = mmif.get_documents_by_type(DocumentTypes.VideoDocument)[0]
@@ -38,11 +39,14 @@ class EasyOcrWrapper(ClamsApp):
         )
 
         for timeframe in input_view.get_annotations(AnnotationTypes.TimeFrame):
-            print(timeframe.properties)
+            self.logger.debug(timeframe.properties)
             # get images from time frame
             if config["sampleFrames"] == 1:
-                image = vdh.extract_mid_frame(mmif, timeframe, as_PIL=False)
+                # image: np.ndarray = vdh.extract_mid_frame(mmif, timeframe, as_PIL=False) # TODO: fix midframe
+                sample = vdh.sample_frames(timeframe.properties["start"], timeframe.properties["end"], 15)
+                image: np.ndarray = vdh.extract_frames_as_images(video_doc, sample, as_PIL=False)[0]
                 ocr = self.reader.readtext(image)
+                self.logger.debug(ocr)
             else:
                 timeframe_length = int(timeframe.properties["end"] - timeframe.properties["start"])
                 sample_frames = config["sampleFrames"]
@@ -56,18 +60,18 @@ class EasyOcrWrapper(ClamsApp):
                 # Not implemented yet
                 raise NotImplementedError
 
-            text = ""
+            full_text = ""
             scores = []
             for coord, text, score in ocr:
-                if score > 0.5:
-                    text += text + " "
+                if score > 0.4:
+                    full_text += text + " "
                     scores.append(score)
-            score = sum(scores) / len(scores)
-            self.logger.debug("OCR: " + text)
+
+            self.logger.debug("Confident OCR: " + full_text)
 
             # add OCR output to text document
-            text_document = new_view.new_textdocument(text)
-            text_document.add_property("confidence", score)
+            text_document = new_view.new_textdocument(full_text)
+            # text_document.add_property("confidence", score)
             align_annotation = new_view.new_annotation(AnnotationTypes.Alignment)
             align_annotation.add_property("source", timeframe.id)
             align_annotation.add_property("target", text_document.id)
@@ -78,11 +82,9 @@ class EasyOcrWrapper(ClamsApp):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--port", action="store", default="5000", help="set port to listen"
-    )
+    parser.add_argument("--port", action="store", default="5000", help="set port to listen")
     parser.add_argument("--production", action="store_true", help="run gunicorn server")
-    # more arguments as needed
+    # add more arguments as needed
     # parser.add_argument(more_arg...)
 
     parsed_args = parser.parse_args()
@@ -91,8 +93,10 @@ if __name__ == "__main__":
     app = EasyOcrWrapper()
 
     http_app = Restifier(app, port=int(parsed_args.port))
-
+    # for running the application in production mode
     if parsed_args.production:
         http_app.serve_production()
+    # development mode
     else:
+        app.logger.setLevel(logging.DEBUG)
         http_app.run()
