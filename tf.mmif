@@ -37,7 +37,7 @@
           "@type": "http://mmif.clams.ai/vocabulary/TimeFrame/v1",
           "properties": {
             "start": 101540,
-            "end": 101560,
+            "end": 101755,
             "unit": "frames",
             "label": "chyron",
             "id": "tf_1"

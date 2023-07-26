@@ -45,27 +45,30 @@ class EasyOcrWrapper(ClamsApp):
                 # image: np.ndarray = vdh.extract_mid_frame(mmif, timeframe, as_PIL=False) # TODO: fix midframe
                 sample = vdh.sample_frames(timeframe.properties["start"], timeframe.properties["end"], 15)
                 image: np.ndarray = vdh.extract_frames_as_images(video_doc, sample, as_PIL=False)[0]
-                ocr = self.reader.readtext(image)
-                self.logger.debug(ocr)
+                ocrs = [self.reader.readtext(image)]
+                self.logger.debug(ocrs)
             else:
+                self.logger.debug(f"Sampling {config['sampleFrames']} frames")
                 timeframe_length = int(timeframe.properties["end"] - timeframe.properties["start"])
                 sample_frames = config["sampleFrames"]
                 if timeframe_length < sample_frames:
                     sample_frames = int(timeframe_length)
-                sample_ratio = int(timeframe.properties["start"]
-                                   + timeframe.properties["end"]) // sample_frames
+                sample_ratio = int(timeframe.properties["end"]
+                                   - timeframe.properties["start"]) // sample_frames
                 tf_sample = vdh.sample_frames(timeframe.properties["start"], timeframe.properties["end"],
                                               sample_ratio)
                 images = vdh.extract_frames_as_images(video_doc, tf_sample)
-                # Not implemented yet
-                raise NotImplementedError
+                ocrs = []
+                for image in images:
+                    ocrs.append(self.reader.readtext(image))
 
             full_text = ""
             scores = []
-            for coord, text, score in ocr:
-                if score > 0.4:
-                    full_text += text + " "
-                    scores.append(score)
+            for ocr in ocrs:
+                for coord, text, score in ocr:
+                    if score > 0.4:
+                        full_text += text + " "
+                        scores.append(score)
 
             self.logger.debug("Confident OCR: " + full_text)
 
