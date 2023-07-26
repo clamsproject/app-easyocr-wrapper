@@ -8,7 +8,7 @@
       "properties": {
         "mime": "video",
         "id": "d1",
-        "location": "file:///Users/sam/Documents/clams_docs/test_vid.mp4"
+        "location": "file:///home/snewman/test_vid.mp4"
       }
     }
   ],
@@ -28,7 +28,7 @@
           "timeUnit": "milliseconds",
           "sampleRatio": "10",
           "threshold": "0.275",
-          "query": "['afghanistan@afghanistan', 'donald rumsfeld@rumsfeld']",
+          "query": "[]",
           "pretty": "True"
         }
       },
@@ -36,10 +36,10 @@
         {
           "@type": "http://mmif.clams.ai/vocabulary/TimeFrame/v1",
           "properties": {
-            "start": 101628,
-            "end": 101630,
+            "start": 101540,
+            "end": 101560,
             "unit": "frames",
-            "label": "credits",
+            "label": "chyron",
             "id": "tf_1"
           }
         }
