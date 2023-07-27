@@ -42,9 +42,7 @@ class EasyOcrWrapper(ClamsApp):
             self.logger.debug(timeframe.properties)
             # get images from time frame
             if config["sampleFrames"] == 1:
-                # image: np.ndarray = vdh.extract_mid_frame(mmif, timeframe, as_PIL=False) # TODO: fix midframe
-                sample = vdh.sample_frames(timeframe.properties["start"], timeframe.properties["end"], 15)
-                image: np.ndarray = vdh.extract_frames_as_images(video_doc, sample, as_PIL=False)[0]
+                image: np.ndarray = vdh.extract_mid_frame(mmif, timeframe, as_PIL=False)
                 ocrs = [self.reader.readtext(image)]
                 self.logger.debug(ocrs)
             else:

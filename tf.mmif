@@ -38,7 +38,7 @@
           "properties": {
             "start": 101540,
             "end": 101755,
-            "unit": "frames",
+            "timeUnit": "frames",
             "label": "chyron",
             "id": "tf_1"
           }
