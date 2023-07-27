@@ -25,19 +25,16 @@ def appmetadata() -> AppMetadata:
     metadata = AppMetadata(
         name="Easyocr Wrapper",
         description="Using EasyOCR to extract text from timeframes",
-        app_license="MIT",  # short name for a software license like MIT, Apache2, GPL, etc.
-        identifier="easyocr-wrapper",  # should be a single string without whitespaces. If you don't intent to publish this app to the CLAMS app-directory, please use a full IRI format. 
-        url="https://fakegithub.com/some/repository",  # a website where the source code and full documentation of the app is hosted
-        # (if you are on the CLAMS team, this MUST be "https://github.com/clamsproject/app-easyocr-wrapper"
-        # (see ``.github/README.md`` file in this directory for the reason)
+        app_license="MIT",
+        identifier="easyocr-wrapper",
+        url="https://github.com/clamsproject/app-easyocr-wrapper",
         analyzer_version="1.7.0",
         analyzer_license="Apache 2.0",  # short name for a software license
     )
-    # and then add I/O specifications: an app must have at least one input and one output
     metadata.add_input(DocumentTypes.VideoDocument)
     metadata.add_output(DocumentTypes.TextDocument)
+    metadata.add_output(AnnotationTypes.Alignment)
     
-    # (optional) and finally add runtime parameter specifications
     metadata.add_parameter(name='sampleFrames', description='Number of frames to sample from timeframe',
                            type='integer', default='1')
 
