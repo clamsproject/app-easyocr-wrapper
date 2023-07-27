@@ -1,6 +1,6 @@
 import argparse
 import logging
-from typing import Union, List, Dict, Tuple, Iterable
+from typing import Union
 
 # mostly likely you'll need these modules/classes
 from clams import ClamsApp, Restifier
