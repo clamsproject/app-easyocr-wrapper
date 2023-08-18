@@ -4,7 +4,7 @@ from typing import Union
 
 # mostly likely you'll need these modules/classes
 from clams import ClamsApp, Restifier
-from mmif import Mmif, View, Annotation, Document, AnnotationTypes, DocumentTypes
+from mmif import Mmif, View, Document, AnnotationTypes, DocumentTypes
 from mmif.utils import video_document_helper as vdh
 
 import easyocr

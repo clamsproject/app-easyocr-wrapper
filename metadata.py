@@ -29,7 +29,7 @@ def appmetadata() -> AppMetadata:
         identifier="easyocr-wrapper",
         url="https://github.com/clamsproject/app-easyocr-wrapper",
         analyzer_version="1.7.0",
-        analyzer_license="Apache 2.0",  # short name for a software license
+        analyzer_license="Apache 2.0",
     )
     metadata.add_input(DocumentTypes.VideoDocument)
     metadata.add_output(DocumentTypes.TextDocument)
