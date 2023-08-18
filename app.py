@@ -42,7 +42,10 @@ class EasyOcrWrapper(ClamsApp):
             self.logger.debug(timeframe.properties)
             # get images from time frame
             if config["sampleFrames"] == 1:
+                self.logger.debug("Sampling 1 frame")
                 image: np.ndarray = vdh.extract_mid_frame(mmif, timeframe, as_PIL=False)
+                self.logger.debug("Extracted image")
+                self.logger.debug("Running OCR")
                 ocrs = [self.reader.readtext(image)]
                 self.logger.debug(ocrs)
             else:

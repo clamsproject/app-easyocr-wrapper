@@ -1,5 +1,5 @@
 # Use the same base image version as the clams-python python library version
-FROM ghcr.io/clamsproject/clams-python:1.0.9
+FROM ghcr.io/clamsproject/clams-python-ffmpeg-torch2:1.0.9
 # See https://github.com/orgs/clamsproject/packages?tab=packages&q=clams-python for more base images
 # IF you want to automatically publish this image to the clamsproject organization, 
 # 1. you should have generated this template without --no-github-actions flag
@@ -19,12 +19,30 @@ ENV CLAMS_APP_VERSION ${CLAMS_APP_VERSION}
 # install more system packages as needed using the apt manager
 ################################################################################
 
+# Configure apt and install packages (FROM EASYOCR DOCKERFILE)
+RUN apt-get update -y && \
+    apt-get install -y \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgl1-mesa-dev \
+    git \
+    # cleanup
+    && apt-get autoremove -y \
+    && apt-get clean -y \
+    && rm -rf /var/lib/apt/lists
+
 ################################################################################
 # main app installation
-COPY ./ /app
 WORKDIR /app
+
+COPY requirements.txt .
+
 RUN pip3 install -r requirements.txt
 
+COPY . .
+
 # default command to run the CLAMS app in a production server 
-CMD ["python3", "app.py", "--production"]
+CMD ["python3", "app.py"]
 ################################################################################
