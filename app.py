@@ -46,7 +46,7 @@ class EasyOcrWrapper(ClamsApp):
                 image: np.ndarray = vdh.extract_mid_frame(mmif, timeframe, as_PIL=False)
                 self.logger.debug("Extracted image")
                 self.logger.debug("Running OCR")
-                ocrs = [self.reader.readtext(image)]
+                ocrs = [self.reader.readtext(image, width_ths=0.25)]
                 self.logger.debug(ocrs)
             else:
                 self.logger.debug(f"Sampling {config['sampleFrames']} frames")
@@ -61,25 +61,22 @@ class EasyOcrWrapper(ClamsApp):
                 images = vdh.extract_frames_as_images(video_doc, tf_sample)
                 ocrs = []
                 for image in images:
-                    ocrs.append(self.reader.readtext(image))
+                    ocrs.append(self.reader.readtext(image, width_ths=0.25))
 
-            full_text = ""
-            scores = []
             for ocr in ocrs:
                 for coord, text, score in ocr:
                     if score > 0.4:
-                        full_text += text + " "
-                        scores.append(score)
-
-            self.logger.debug("Confident OCR: " + full_text)
-
-            # add OCR output to text document
-            text_document = new_view.new_textdocument(full_text)
-            # text_document.add_property("confidence", score)
-            align_annotation = new_view.new_annotation(AnnotationTypes.Alignment)
-            align_annotation.add_property("source", timeframe.id)
-            align_annotation.add_property("target", text_document.id)
-            pass
+                        self.logger.debug("Confident OCR: " + text)
+                        text_document = new_view.new_textdocument(text)
+                        bbox_annotation = new_view.new_annotation(AnnotationTypes.BoundingBox)
+                        bbox_annotation.add_property("coordinates", coord)
+                        bbox_annotation.add_property("boxType", "text")
+                        # For now, we're gonna use the start time of the timeframe as the timePoint because vdh extract
+                        # midframe doesn't return the frame number
+                        bbox_annotation.add_property("timePoint", timeframe.properties["start"])
+                        align_annotation = new_view.new_annotation(AnnotationTypes.Alignment)
+                        align_annotation.add_property("source", bbox_annotation.id)
+                        align_annotation.add_property("target", text_document.id)
 
         return mmif
 
