@@ -54,10 +54,8 @@ class EasyOcrWrapper(ClamsApp):
                 sample_frames = config["sampleFrames"]
                 if timeframe_length < sample_frames:
                     sample_frames = int(timeframe_length)
-                sample_ratio = int(timeframe.properties["end"]
-                                   - timeframe.properties["start"]) // sample_frames
-                tf_sample = vdh.sample_frames(timeframe.properties["start"], timeframe.properties["end"],
-                                              sample_ratio)
+                sample_ratio = int(timeframe.get("end") - timeframe.get("start")) // sample_frames
+                tf_sample = vdh.sample_frames(timeframe.get("start"), timeframe.get("end"), sample_ratio)
                 images = vdh.extract_frames_as_images(video_doc, tf_sample)
                 ocrs = []
                 for image in images:
@@ -69,14 +67,18 @@ class EasyOcrWrapper(ClamsApp):
                         self.logger.debug("Confident OCR: " + text)
                         text_document = new_view.new_textdocument(text)
                         bbox_annotation = new_view.new_annotation(AnnotationTypes.BoundingBox)
+                        timepoint = new_view.new_annotation(AnnotationTypes.TimePoint)
+                        timepoint.add_property("timePoint", timeframe.properties["start"])
                         bbox_annotation.add_property("coordinates", coord)
                         bbox_annotation.add_property("boxType", "text")
                         # For now, we're gonna use the start time of the timeframe as the timePoint because vdh extract
                         # midframe doesn't return the frame number
-                        bbox_annotation.add_property("timePoint", timeframe.properties["start"])
-                        align_annotation = new_view.new_annotation(AnnotationTypes.Alignment)
-                        align_annotation.add_property("source", bbox_annotation.id)
-                        align_annotation.add_property("target", text_document.id)
+                        text_align = new_view.new_annotation(AnnotationTypes.Alignment)
+                        text_align.add_property("source", bbox_annotation.id)
+                        text_align.add_property("target", text_document.id)
+                        time_align = new_view.new_annotation(AnnotationTypes.Alignment)
+                        time_align.add_property("source", bbox_annotation.id)
+                        time_align.add_property("target", timepoint.id)
 
         return mmif
 
