@@ -32,6 +32,7 @@ def appmetadata() -> AppMetadata:
         analyzer_license="Apache 2.0",
     )
     metadata.add_input(DocumentTypes.VideoDocument)
+    metadata.add_input(AnnotationTypes.TimeFrame)
     metadata.add_output(DocumentTypes.TextDocument)
     metadata.add_output(AnnotationTypes.Alignment)
     metadata.add_output(AnnotationTypes.BoundingBox)

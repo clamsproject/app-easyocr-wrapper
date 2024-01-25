@@ -33,10 +33,6 @@ class EasyOcrWrapper(ClamsApp):
         config = self.get_configuration(**parameters)
         new_view: View = mmif.new_view()
         self.sign_view(new_view, parameters)
-        new_view.new_contain(
-            AnnotationTypes.Relation,
-            document=video_doc.id,
-        )
 
         for timeframe in input_view.get_annotations(AnnotationTypes.TimeFrame):
             self.logger.debug(timeframe.properties)
@@ -71,8 +67,6 @@ class EasyOcrWrapper(ClamsApp):
                         timepoint.add_property("timePoint", timeframe.properties["start"])
                         bbox_annotation.add_property("coordinates", coord)
                         bbox_annotation.add_property("boxType", "text")
-                        # For now, we're gonna use the start time of the timeframe as the timePoint because vdh extract
-                        # midframe doesn't return the frame number
                         text_align = new_view.new_annotation(AnnotationTypes.Alignment)
                         text_align.add_property("source", bbox_annotation.id)
                         text_align.add_property("target", text_document.id)
