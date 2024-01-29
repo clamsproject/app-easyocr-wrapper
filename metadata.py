@@ -37,9 +37,6 @@ def appmetadata() -> AppMetadata:
     metadata.add_output(AnnotationTypes.Alignment)
     metadata.add_output(AnnotationTypes.BoundingBox)
     metadata.add_output(AnnotationTypes.TimePoint)
-    
-    metadata.add_parameter(name='sampleFrames', description='Number of frames to sample from timeframe',
-                           type='integer', default='1')
 
     return metadata
 
