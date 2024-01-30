@@ -30,49 +30,37 @@ class EasyOcrWrapper(ClamsApp):
         video_doc: Document = mmif.get_documents_by_type(DocumentTypes.VideoDocument)[0]
         input_view: View = mmif.get_views_for_document(video_doc.properties.id)[0]
 
-        config = self.get_configuration(**parameters)
         new_view: View = mmif.new_view()
         self.sign_view(new_view, parameters)
 
         for timeframe in input_view.get_annotations(AnnotationTypes.TimeFrame):
             self.logger.debug(timeframe.properties)
-            # get images from time frame
-            if config["sampleFrames"] == 1:
-                self.logger.debug("Sampling 1 frame")
-                image: np.ndarray = vdh.extract_mid_frame(mmif, timeframe, as_PIL=False)
-                self.logger.debug("Extracted image")
-                self.logger.debug("Running OCR")
-                ocrs = [self.reader.readtext(image, width_ths=0.25)]
-                self.logger.debug(ocrs)
-            else:
-                self.logger.debug(f"Sampling {config['sampleFrames']} frames")
-                timeframe_length = int(timeframe.properties["end"] - timeframe.properties["start"])
-                sample_frames = config["sampleFrames"]
-                if timeframe_length < sample_frames:
-                    sample_frames = int(timeframe_length)
-                sample_ratio = int(timeframe.get("end") - timeframe.get("start")) // sample_frames
-                tf_sample = vdh.sample_frames(timeframe.get("start"), timeframe.get("end"), sample_ratio)
-                images = vdh.extract_frames_as_images(video_doc, tf_sample)
-                ocrs = []
-                for image in images:
-                    ocrs.append(self.reader.readtext(image, width_ths=0.25))
-
+            self.logger.debug("Sampling 1 frame")
+            # Samples midframe of timeframe until SWT outputs TimePoints
+            image: np.ndarray = vdh.extract_mid_frame(mmif, timeframe, as_PIL=False)
+            self.logger.debug("Extracted image")
+            self.logger.debug("Running OCR")
+            ocrs = [self.reader.readtext(image, width_ths=0.25)]
+            self.logger.debug(ocrs)
+            timepoint = new_view.new_annotation(AnnotationTypes.TimePoint)
+            timepoint.add_property("timePoint", vdh.get_mid_framenum(mmif, timeframe))
+            point_frame = new_view.new_annotation(AnnotationTypes.Alignment)
+            point_frame.add_property("source", timeframe.id)
+            point_frame.add_property("target", timepoint.id)
             for ocr in ocrs:
                 for coord, text, score in ocr:
                     if score > 0.4:
                         self.logger.debug("Confident OCR: " + text)
                         text_document = new_view.new_textdocument(text)
                         bbox_annotation = new_view.new_annotation(AnnotationTypes.BoundingBox)
-                        timepoint = new_view.new_annotation(AnnotationTypes.TimePoint)
-                        timepoint.add_property("timePoint", timeframe.properties["start"])
                         bbox_annotation.add_property("coordinates", coord)
                         bbox_annotation.add_property("boxType", "text")
-                        text_align = new_view.new_annotation(AnnotationTypes.Alignment)
-                        text_align.add_property("source", bbox_annotation.id)
-                        text_align.add_property("target", text_document.id)
-                        time_align = new_view.new_annotation(AnnotationTypes.Alignment)
-                        time_align.add_property("source", bbox_annotation.id)
-                        time_align.add_property("target", timepoint.id)
+                        time_bbox = new_view.new_annotation(AnnotationTypes.Alignment)
+                        time_bbox.add_property("source", timepoint.id)
+                        time_bbox.add_property("target", bbox_annotation.id)
+                        bbox_text = new_view.new_annotation(AnnotationTypes.Alignment)
+                        bbox_text.add_property("source", bbox_annotation.id)
+                        bbox_text.add_property("target", text_document.id)
 
         return mmif
 
