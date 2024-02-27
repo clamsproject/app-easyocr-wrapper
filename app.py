@@ -35,15 +35,18 @@ class EasyOcrWrapper(ClamsApp):
 
         for timeframe in input_view.get_annotations(AnnotationTypes.TimeFrame):
             self.logger.debug(timeframe.properties)
+            representative: AnnotationTypes.TimePoint = (
+                input_view.get_annotation_by_id(timeframe.get("representatives")[0]))
             self.logger.debug("Sampling 1 frame")
-            # Samples midframe of timeframe until SWT outputs TimePoints
-            image: np.ndarray = vdh.extract_mid_frame(mmif, timeframe, as_PIL=False)
+            # uses SWT v3.0 typo "timePont" instead of "timePoint"
+            rep_frame = vdh.convert(representative.get("timePont"), "milliseconds",
+                                    "frame", vdh.get_framerate(video_doc))
+            image: np.ndarray = vdh.extract_frames_as_images(video_doc, [rep_frame], as_PIL=False)[0]
             self.logger.debug("Extracted image")
             self.logger.debug("Running OCR")
             ocrs = [self.reader.readtext(image, width_ths=0.25)]
             self.logger.debug(ocrs)
-            timepoint = new_view.new_annotation(AnnotationTypes.TimePoint)
-            timepoint.add_property("timePoint", vdh.get_mid_framenum(mmif, timeframe))
+            timepoint = representative
             point_frame = new_view.new_annotation(AnnotationTypes.Alignment)
             point_frame.add_property("source", timeframe.id)
             point_frame.add_property("target", timepoint.id)
