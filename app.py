@@ -28,25 +28,24 @@ class EasyOcrWrapper(ClamsApp):
     def _annotate(self, mmif: Union[str, dict, Mmif], **parameters) -> Mmif:
         self.logger.debug("running app")
         video_doc: Document = mmif.get_documents_by_type(DocumentTypes.VideoDocument)[0]
-        input_view: View = mmif.get_views_for_document(video_doc.properties.id)[0]
-
+        input_view = mmif.get_views_for_document(video_doc.properties.id)[-1]
         new_view: View = mmif.new_view()
         self.sign_view(new_view, parameters)
 
         for timeframe in input_view.get_annotations(AnnotationTypes.TimeFrame):
             self.logger.debug(timeframe.properties)
-            representative: AnnotationTypes.TimePoint = (
-                input_view.get_annotation_by_id(timeframe.get("representatives")[0]))
-            self.logger.debug("Sampling 1 frame")
-            # uses SWT v3.0 typo "timePont" instead of "timePoint"
-            rep_frame = vdh.convert(representative.get("timePont"), "milliseconds",
-                                    "frame", vdh.get_framerate(video_doc))
-            image: np.ndarray = vdh.extract_frames_as_images(video_doc, [rep_frame], as_PIL=False)[0]
+            representatives = timeframe.get("representatives") if "representatives" in timeframe.properties else None
+            if representatives:
+                image = vdh.extract_representative_frame(mmif, timeframe, as_PIL=True)
+            else:
+                image = vdh.extract_mid_frame(mmif, timeframe, as_PIL=True)
+
             self.logger.debug("Extracted image")
             self.logger.debug("Running OCR")
-            ocrs = [self.reader.readtext(image, width_ths=0.25)]
+            ocrs = [self.reader.readtext(np.array(image), width_ths=0.25)]
             self.logger.debug(ocrs)
-            timepoint = representative
+            timepoint = new_view.new_annotation(AnnotationTypes.TimePoint)
+            timepoint.add_property('timePoint', timeframe.get("start"))
             point_frame = new_view.new_annotation(AnnotationTypes.Alignment)
             point_frame.add_property("source", timeframe.id)
             point_frame.add_property("target", timepoint.id)

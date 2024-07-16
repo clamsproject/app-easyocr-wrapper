@@ -1,6 +1,5 @@
 # Make sure clams-python version is explicitly specified, at least the lower bound
-clams-python==1.0.9
-mmif-python[cv]==1.0.8
+clams-python==1.2.6
 
 easyocr==1.7.0
 chardet==5.2.0
