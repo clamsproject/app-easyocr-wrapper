@@ -36,8 +36,10 @@ class EasyOcrWrapper(ClamsApp):
             self.logger.debug(timeframe.properties)
             representatives = timeframe.get("representatives") if "representatives" in timeframe.properties else None
             if representatives:
+                frame_number = vdh.get_representative_framenum(mmif, timeframe)
                 image = vdh.extract_representative_frame(mmif, timeframe, as_PIL=True)
             else:
+                frame_number = vdh.get_mid_framenum(mmif, timeframe)
                 image = vdh.extract_mid_frame(mmif, timeframe, as_PIL=True)
 
             self.logger.debug("Extracted image")
@@ -45,9 +47,9 @@ class EasyOcrWrapper(ClamsApp):
             ocrs = [self.reader.readtext(np.array(image), width_ths=0.25)]
             self.logger.debug(ocrs)
             timepoint = new_view.new_annotation(AnnotationTypes.TimePoint)
-            timepoint.add_property('timePoint', timeframe.get("start"))
+            timepoint.add_property('timePoint', frame_number)
             point_frame = new_view.new_annotation(AnnotationTypes.Alignment)
-            point_frame.add_property("source", timeframe.id)
+            point_frame.add_property("source", timeframe.long_id)
             point_frame.add_property("target", timepoint.id)
             for ocr in ocrs:
                 for coord, text, score in ocr:
